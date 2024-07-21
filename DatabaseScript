@@ -1,1 +1,51 @@
 #!/bin/bash
+
+echo -e "\n           Welcome To Our DBMS"
+
+function mainMenu {
+  echo -e "\n+-------------Main Menu-------------+"
+  echo "Press (1) to Create Database        -->"
+  echo "Press (2) to List Databases         -->"
+  echo "Press (3) to Connect to Database    -->"
+  echo "Press (4) to Drop Database          -->"
+  echo "Press (5) to Exit                   -->"
+  echo "+-----------------------------------+"
+  echo -e "Enter Choice: \c"
+  read ch
+  case $ch in
+    1)  createDatabase ;;
+    2)  ls ./Databases/ ; mainMenu ;;
+    3)  connectDatbase ;;
+    4)  dropDatabase ;;
+    5)  exit ;;
+    *)  echo "Wrong Choice, Please enter a valid number" ; mainMenu;
+  esac
+}
+
+function connectDatbase {
+  echo -e "Enter Database Name: \c"
+  read dbName
+  cd ./Databases/$databaseName
+  if [[ $? == 0 ]]; then
+    echo "Database $databaseName was Successfully Selected"
+    tablesMenu
+  else
+    echo "Database $databaseName wasn't found"
+    mainMenu
+  fi
+}
+
+
+function dropDatabase {
+  echo -e "Enter Database Name: \c"
+  read dbName
+  rm -r ./Databases/$databaseName
+  if [[ $? == 0 ]]; then
+    echo "Database Dropped Successfully"
+  else
+    echo "Database Not found"
+  fi
+  mainMenu
+}
+
+mainMenu
