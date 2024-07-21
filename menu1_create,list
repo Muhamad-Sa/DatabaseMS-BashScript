@@ -15,31 +15,36 @@ case $var in
     while true
     do
         read -p "Enter Datbase Name: " DBName
-        case $DBName in
-        [a-zA-Z][a-zA-Z_]*[a-zA-Z])
-            if [[ ! -e $DBName ]]
-            then
-                mkdir ./$DBName
-                echo Database successfully created!
-                echo -------------------------------
-                break
-            else
-                echo Database Already Exist!
-            fi    
-            ;;
-        *)
+        if [[ $DBName =~ ^[A-Z]?[a-z_]*[a-z]$ ]]
+        then
+                if [[ ! -e $DBName ]]
+                then
+                    mkdir ./$DBName
+                    echo Database successfully created!
+                    echo -------------------------------
+                    break
+                else
+                    echo Database Already Exist!
+                fi    
+        else
             echo Enter a Valid Name!    
-        esac
-        
+       
+        fi    
     done 
     ;;  
     
     
 
 "List Databases")
-	echo List Databases
-	;;
+    declare -i count=0
+	for dir in $(ls -l | grep ^d | awk '{print $9}' | sort -f)
 
+    do
+    count+=1
+        echo $count")" $dir
+    done    
+	;;
+    
 "Connect To Databases")
 	echo Connect To Databases
 	;;
