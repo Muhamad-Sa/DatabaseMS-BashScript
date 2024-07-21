@@ -15,7 +15,7 @@ function mainMenu {
 
   case $choice in
     1)  createDatabase ;;
-    2)  ls ./Databases ; mainMenu ;;
+    2)  ls -d */ ; mainMenu ;;
     3)  connectDatbase ;;
     4)  dropDatabase ;;
     5)  exit ;;
@@ -26,7 +26,7 @@ function mainMenu {
 function connectDatbase {
   echo -e "Enter Database Name: \c"
   read databaseName
-  cd ./Databases/$databaseName 2>> Errors/errorsFile
+  cd ./$databaseName 2>> ./errorsFile
   if [[ $? == 0 ]]; then
     echo "Database $databaseName was Successfully Selected"
     tablesMenu
@@ -40,7 +40,7 @@ function connectDatbase {
 function dropDatabase {
   echo -e "Enter Database Name: \c"
   read databaseName
-  rm -r ./Databases/$databaseName 2>> Errors/errorsFile
+  rm -r ./$databaseName 2>> ./errorsFile
   if [[ $? == 0 ]]; then
     echo "Database Dropped Successfully"
   else
