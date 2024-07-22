@@ -37,7 +37,7 @@ function createDatabase {
                     mkdir ./$DBName
                     echo +-----------------------------+
                     echo "Database successfully created! :)"
-                    break
+                    listDatabases
                 else
                     echo Database Already Exist!
                 fi    
