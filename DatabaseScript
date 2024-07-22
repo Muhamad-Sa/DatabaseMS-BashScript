@@ -1,4 +1,6 @@
-#!/bin/bash
+
+shopt -s extglob
+export LC_COLLATE=C
 
 echo -e "\n           Welcome To Our DBMS"
 
@@ -15,13 +17,50 @@ function mainMenu {
 
   case $choice in
     1)  createDatabase ;;
-    2)  ls -d */ ; mainMenu ;;
+    2)  listDatabases ;;
     3)  connectDatbase ;;
     4)  dropDatabase ;;
     5)  exit ;;
     *)  echo "Wrong Choice, Please enter a valid number" ; mainMenu;
   esac
 }
+
+# Functions
+function createDatabase {
+    while true
+    do
+        read -p "Enter Datbase Name: " DBName
+        if [[ $DBName =~ ^[A-Z]?[a-z_]*[a-z]$ ]]
+        then
+                if [[ ! -e $DBName ]]
+                then
+                    mkdir ./$DBName
+                    echo +-----------------------------+
+                    echo "Database successfully created! :)"
+                    break
+                else
+                    echo Database Already Exist!
+                fi    
+        else
+            echo Enter a Valid Name!   
+        fi    
+    done
+    mainMenu  
+}
+
+function listDatabases {
+    echo All_Databases:
+    echo +---------------+
+    declare -i count=0
+    for dir in $(ls -l | grep ^d | cut -d " " -f 9 | sort -f)
+    do
+        count+=1
+        echo "$count) $dir"
+    done
+    echo +---------------+
+    mainMenu
+}
+
 
 function connectDatbase {
   echo -e "Enter Database Name: \c"
