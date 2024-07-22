@@ -3,17 +3,44 @@
 shopt -s extglob
 export LC_COLLATE=C
 
-# menu_1
-PS3="Enter Your Choice: "
-select var in 'Create Database' 'List Databases' 'Connect To Databases' 'Drop Database' 'exit'
-do 
 
-case $var in
-"exit")	
-	break
-	;;
+echo -e "\n           Welcome To Our DBMS"
 
-"Create Database")
+function mainMenu {
+  echo -e "\n+-------------Main Menu-------------+"
+  echo "Press (1) to Create Database        -->"
+  echo "Press (2) to List Databases         -->"
+  echo "Press (3) to Connect to Database    -->"
+  echo "Press (4) to Drop Database          -->"
+  echo "Press (5) to Exit                   -->"
+  echo "+-----------------------------------+"
+  echo -e "Enter Choice: \c"
+  read choice
+
+  case $choice in
+    1)  
+        createDatabase 
+        ;;
+    2)
+        listDatabases 
+        ;;
+    3)  
+        connectDatbase 
+        ;;
+    4)  
+        dropDatabase 
+        ;;
+    5)  
+        exit 
+        ;;
+    *)  
+        echo "Wrong Choice, Please enter a valid number"
+        mainMenu
+  esac
+}
+
+# Functions
+function createDatabase {
     while true
     do
         read -p "Enter Datbase Name: " DBName
@@ -22,43 +49,30 @@ case $var in
                 if [[ ! -e $DBName ]]
                 then
                     mkdir ./$DBName
-                    echo Database successfully created!
+                    echo +-----------------------------+
+                    echo "Database successfully created! :)"
                     break
                 else
                     echo Database Already Exist!
                 fi    
         else
-            echo Enter a Valid Name!    
-       
+            echo Enter a Valid Name!   
         fi    
-    done 
-    ;;  
-    
-    
+    done
+    mainMenu  
+}
 
-"List Databases")
+function listDatabases {
+    echo All_Databases:
+    echo +---------------+
     declare -i count=0
-	for dir in $(ls -l | grep ^d | awk '{print $9}' | sort -f)
-
+    for dir in $(ls -l | grep ^d | cut -d " " -f 9 | sort -f)
     do
-    count+=1
-        echo $count")" $dir
-    done    
-	;;
-    
-"Connect To Databases")
-	echo Connect To Databases
-	;;
+        count+=1
+        echo "$count) $dir"
+    done
+    echo +---------------+
+    mainMenu
+}
 
-"Drop Database")
-	echo Drop Database
-	;;
-
-*)
-	echo Enter a Valid Number!
-	;;
-
-esac
-
-done 
-
+mainMenu 
