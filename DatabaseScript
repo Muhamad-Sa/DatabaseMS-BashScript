@@ -151,6 +151,11 @@ selectFromTable() {
       selectFromTable
     fi
 
+    if [ "$(wc -l < "$table_file")" -le 1 ]; then
+      echo "The table $table_name is empty or contains only the header."
+      selectFromTable
+    fi
+
     {
       echo "$header" | tr '|' ',' | cut -d',' -f $column_indices
       tail -n +2 "$table_file" | cut -d',' -f $column_indices
