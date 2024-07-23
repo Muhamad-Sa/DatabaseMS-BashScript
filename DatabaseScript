@@ -144,7 +144,7 @@ function createTable {
 function createColumns {
     local tbname=$1  
     local schemaFile=".${tbname}_schema"
-
+    local header=""
     #create schema file
     touch $schemaFile 
 
@@ -155,10 +155,10 @@ function createColumns {
         if [[ $columns =~ ^[0-9]+$ ]]
         then
             clear
-            line="" 
             for ((i=1;i<=columns;i++))
             do
                 # empty line for schema..
+                
                 line=""
 
                 # validate column name
@@ -170,6 +170,7 @@ function createColumns {
                             if grep -qi "^$colName:" "$schemaFile"; then
                                 echo "Column $colName already exists in the schema file."
                             else
+                                header+=$colName
                                 line+=$colName:
                                 break
                             fi
@@ -206,10 +207,12 @@ function createColumns {
                     read -p "Y/N: "
                     case $REPLY in
                         [Yy][Ee][Ss]|[Yy])
+                            header+="(PK),"
                             line+=":PK"
                             break
                             ;;
                         [Nn][Oo]|[Nn])
+                            header+=","
                             line+=""
                             break
                             ;;
@@ -219,9 +222,11 @@ function createColumns {
                     esac
                 done
                 #end of inputs
-                echo $line >> $schemaFile 2>> ../errorsFile
+                echo $line >> $schemaFile 2>> ../errorsFile 
             done
-            #end of for-loop
+            #end of for-loop / make header for file..
+            echo $header >> $tbname 2>> ../errorsFile
+        
             echo +-----------------------------------+
             echo +--$1 Schema Created Successfully!--+
             echo +-----------------------------------+
@@ -253,11 +258,11 @@ function insertToTable {
                         if(value ~ /^[A-Za-z][A-Za-z0-9]*$/){
                             if ($3 == "PK") {
                                 tvalid = 1
-                                line = line value "(PK)," 
+                                line = line value "(PK)" " "
                             }else{
                             
                                 tvalid = 1
-                                line = line value "," 
+                                line = line value " " 
                             }                           
                         }else{
                             print "Invalid! Please Enter string type."
@@ -272,10 +277,10 @@ function insertToTable {
                         if (value ~/^[0-9]*$/){
                             if ($3 == "PK") {
                                 ivalid = 1
-                                line = line value "(PK)," 
+                                line = line value "(PK)" " "
                             }else{
                                 ivalid = 1
-                                line = line value "," 
+                                line = line value " " 
                             }      
                         }else{
                             print "Invalid! Please Enter a number."
@@ -387,7 +392,7 @@ deleteFromTable() {
 
   if [ ! -f "$table_file" ]; then
     echo "Table $table_name does not exist."
-    return
+    selectFunMenu
   fi
 
   echo "Enter column name for deletion:"
@@ -400,7 +405,7 @@ deleteFromTable() {
   schema_file=".${table_name}_schema"
   if [ ! -f "$schema_file" ]; then
     echo "Schema file $schema_file does not exist."
-    return
+    selectFunMenu
   fi
 
   # Identify the primary key column
@@ -408,7 +413,7 @@ deleteFromTable() {
 
   if [ "$column_name" == "$primary_key_column" ]; then
     echo "Cannot delete rows based on the primary key column ($primary_key_column)."
-    return
+    selectFunMenu
   fi
 
   # Get the header from the table file
