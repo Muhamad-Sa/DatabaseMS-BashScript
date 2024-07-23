@@ -265,7 +265,6 @@ function dropTable {
 }
 
 
-
 selectFromTable() {
   echo "Enter table name:"
   read table_name
@@ -311,7 +310,6 @@ selectFromTable() {
   fi
 
   selectFunMenu
-
 }
 
 validate_columns_format() {
@@ -342,7 +340,6 @@ validate_columns_format() {
     5)  exit ;;
     *)  echo "Wrong Choice, Please enter a valid number" ; selectFunMenu;
   esac
-
   }
 
 mainMenu
