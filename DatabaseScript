@@ -312,6 +312,59 @@ selectFromTable() {
   selectFunMenu
 }
 
+deleteFromTable() {
+  echo "Enter table name:"
+  read table_name
+  table_file="$table_name"
+
+  if [ ! -f "$table_file" ]; then
+    echo "Table $table_name does not exist."
+    return
+  fi
+
+  echo "Enter column name for deletion:"
+  read column_name
+
+  echo "Enter value to delete:"
+  read value
+
+  # Load metadata
+  schema_file=".${table_name}_schema"
+  if [ ! -f "$schema_file" ]; then
+    echo "Schema file $schema_file does not exist."
+    return
+  fi
+
+  # Identify the primary key column
+  primary_key_column=$(grep ':PK' "$schema_file" | cut -d':' -f1)
+
+  if [ "$column_name" == "$primary_key_column" ]; then
+    echo "Cannot delete rows based on the primary key column ($primary_key_column)."
+    return
+  fi
+
+  # Get the header from the table file
+  header=$(sed -n '1p' "$table_file" | tr ',' '|')
+
+  # Get the index of the column to delete from
+  column_index=$(echo "$header" | tr '|' '\n' | grep -n "^$column_name$" | cut -d: -f1)
+
+  if [ -z "$column_index" ]; then
+    echo "Column $column_name does not exist in the table."
+    deleteFromTable
+  fi
+
+  # Remove rows that match the criteria
+  awk -v col="$column_index" -v val="$value" -F',' '
+    NR==1 {print; next}  # Always print the header
+    $col != val {print}  # Print the row if the column value does not match the specified value
+  ' "$table_file" > temp_file && mv temp_file "$table_file"
+
+  echo "Rows where $column_name = $value have been deleted (if any existed)."
+  selectFunMenu
+}
+
+
 validate_columns_format() {
   local input="$1"
   if [[ "$input" =~ ^([a-zA-Z]+,)+ || "$input" =~ ^[a-zA-Z0-9_]+$ ]]; then
