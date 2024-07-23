@@ -37,9 +37,10 @@ function createDatabase {
                     mkdir ./$DBName
                     echo +-----------------------------+
                     echo "Database successfully created! :)"
+                    clear
                     listDatabases
                 else
-                    echo Database Already Exist!
+                    echo Database Already Exists!
                 fi    
         else
             echo Enter a Valid Name!   
@@ -68,7 +69,8 @@ function connectDatbase {
   cd ./$databaseName 2>> ./errorsFile
   if [[ $? == 0 ]]; then
     echo "Database $databaseName was Successfully Selected"
-    tablesMenu
+    clear
+    tablesMenu $databaseName #call with database name
   else
     echo "Database $databaseName wasn't found"
     mainMenu
@@ -89,7 +91,8 @@ function dropDatabase {
 }
 
 
-function tablesMenu {
+function tablesMenu (){
+  source cd ./$1 2>> ../errorsFile
   echo -e "\n+----------------Table Menu----------------+"
   echo "Press (1) to Create Table                  -->"
   echo "Press (2) to List Tables                   -->"
@@ -105,15 +108,160 @@ function tablesMenu {
 
   case $choice in
     1)  createTable ;;
-    2)  ls .; tablesMenu ;;
-    3)  dropTable;;
+    2)  listTables ;;
+    3)  dropTable ;;
     4)  insertIntoTable;;
     5)  selectFromTable;;
     6)  deleteFromTable;;
     7)  updateTable;;
-    8)  exit ;;
+    8)  mainMenu ;; #return to Main menu 
     *)  echo "Wrong Choice, Please enter a valid number" ; tablesMenu;
   esac
+}
+
+function createTable {
+  while true
+  do
+    read -p "Name of the table: " tableName
+    if [[ $tableName =~ ^[A-Z]?[a-z_]*[a-z]$ ]]
+          then
+              if [[ ! -e $tableName ]]
+              then
+                  touch ./$tableName
+                  echo +-----------------------------+
+                  echo "Table successfully created! :)"
+                  createColumns $tableName   
+              else
+                  echo This Table Already Exists!
+              fi    
+          else
+              echo Enter a Valid Name!   
+    fi
+  done     
+}
+
+
+function createColumns {
+    local tbname=$1  
+    local schemaFile=".${tbname}_schema"
+
+    #create schema file
+    touch $schemaFile 
+
+    while true
+    do
+        read -p "Number of the columns: " columns
+        # validate num of columns
+        if [[ $columns =~ ^[0-9]+$ ]]
+        then
+            clear
+            line="" 
+            for ((i=1;i<=columns;i++))
+            do
+                # empty line for schema..
+                line=""
+
+                # validate column name
+                while true
+                    do
+                        read -p "Column($i) name: " colName
+                        if [[ $colName =~ ^[A-Za-z][A-Za-z_]*[A-Za-z]$ ]]
+                        then  
+                            if grep -qi "^$colName:" "$schemaFile"; then
+                                echo "Column $colName already exists in the schema file."
+                            else
+                                line+=$colName:
+                                break
+                            fi
+                        else
+                            echo Enter a Valid Name for Col!
+                        fi
+                    done
+
+                # prompt for type
+                while true; do
+                    echo "Column($i) type (INT, VARCHAR): "
+                    PS3="Choice: "
+                    select type in INT VARCHAR; do
+                        case $type in
+                            "INT")
+                                line+=$type
+                                break 2
+                                ;;
+                            "VARCHAR")
+                                line+=$type
+                                break 2
+                                ;;
+                            *)
+                                echo "Invalid! Please select a valid column type."
+                                ;;
+                        esac
+                    done
+                done
+
+                # prompt for primaryKey
+                while true 
+                do
+                    echo "Is Column($i) Primary-Key ? "
+                    read -p "Y/N: "
+                    case $REPLY in
+                        [Yy][Ee][Ss]|[Yy])
+                            line+=":PK"
+                            break
+                            ;;
+                        [Nn][Oo]|[Nn])
+                            line+=""
+                            break
+                            ;;
+                        *)
+                            echo "Invalid! Please select Yes/No."
+                            ;;
+                    esac
+                done
+                #end of inputs
+                echo $line >> $schemaFile 2>> ../errorsFile
+            done
+            #end of for-loop
+            echo +-----------------------------------+
+            echo +--$1 Schema Created Successfully!--+
+            echo +-----------------------------------+
+            tablesMenu
+        else
+            echo "Not a valid number!"
+        fi
+    done     
+}
+
+function listTables {
+    clear
+    echo All_Tabels:
+    echo +---------------+
+    declare -i count=0
+    for filee in $(ls $1 2>> ../errorsFile)
+    do
+        if [[ $(basename "$filee") == "errorsFile" ]]
+        then
+            continue
+        else    
+            count+=1
+            echo "$count) $filee"
+        fi    
+    done
+    echo +---------------+
+    tablesMenu
+}
+
+function dropTable {
+    clear
+    read -p"Enter table name to drop: " dropName
+    if [ -e $dropName ]
+    then
+        rm -r "$dropName" ".$dropName"_schema 2>/dev/null
+        echo "Table $dropName and its schema have been dropped."
+    else
+        echo "Table $dropName does not exist."
+    fi
+    tablesMenu
 }
 
 
@@ -198,3 +346,10 @@ validate_columns_format() {
   }
 
 mainMenu
+
+
+
+
+
+
+
