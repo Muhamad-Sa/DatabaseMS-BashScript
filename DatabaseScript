@@ -130,7 +130,7 @@ selectFromTable() {
 
   echo "Enter column names to display (comma-separated, or * for all columns):"
   read columns
-  echo -e "\n+-----------------------------------------+"
+  echo -e "\n+-----------------------------------------+\n"
   if [ "$columns" == "*" ]; then
     cat "$table_file"
   
@@ -180,7 +180,8 @@ validate_columns_format() {
   echo "Press (1) to Make Another Operation        -->"
   echo "Press (2) to Go To Table Menu              -->"
   echo "Press (3) to Go To Main Menu               -->"
-  echo "Press (4) to Exit                          -->"
+  echo "Press (4) to Delete from Table             -->"
+  echo "Press (5) to Exit                          -->"
   echo "+-----------------------------------------+"
   echo -e "Enter Choice: \c"
   read choice
@@ -189,7 +190,8 @@ validate_columns_format() {
     1)  selectFromTable ;;
     2)  tablesMenu ;;
     3)  mainMenu ;;
-    4)  exit ;;
+    4)  deleteFromTable ;;
+    5)  exit ;;
     *)  echo "Wrong Choice, Please enter a valid number" ; selectFunMenu;
   esac
 
