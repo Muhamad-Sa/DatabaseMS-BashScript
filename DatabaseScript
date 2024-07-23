@@ -373,6 +373,170 @@ selectFromTable() {
   selectFunMenu
 }
 
+deleteFromTable() {
+  echo "Enter table name:"
+  read table_name
+  table_file="$table_name"
+
+  if [ ! -f "$table_file" ]; then
+    echo "Table $table_name does not exist."
+    return
+  fi
+
+  echo "Enter column name for deletion:"
+  read column_name
+
+  echo "Enter value to delete:"
+  read value
+
+  # Load metadata
+  schema_file=".${table_name}_schema"
+  if [ ! -f "$schema_file" ]; then
+    echo "Schema file $schema_file does not exist."
+    return
+  fi
+
+  # Identify the primary key column
+  primary_key_column=$(grep ':PK' "$schema_file" | cut -d':' -f1)
+
+  if [ "$column_name" == "$primary_key_column" ]; then
+    echo "Cannot delete rows based on the primary key column ($primary_key_column)."
+    return
+  fi
+
+  # Get the header from the table file
+  header=$(sed -n '1p' "$table_file" | tr ',' '|')
+
+  # Get the index of the column to delete from
+  column_index=$(echo "$header" | tr '|' '\n' | grep -n "^$column_name$" | cut -d: -f1)
+
+  if [ -z "$column_index" ]; then
+    echo "Column $column_name does not exist in the table."
+    deleteFromTable
+  fi
+
+  # Remove rows that match the criteria
+  awk -v col="$column_index" -v val="$value" -F',' '
+    NR==1 {print; next}  # Always print the header
+    $col != val {print}  # Print the row if the column value does not match the specified value
+  ' "$table_file" > temp_file && mv temp_file "$table_file"
+
+  echo "Rows where $column_name = $value have been deleted (if any existed)."
+  selectFunMenu
+}
+
+
+updateTable() {
+  echo "Enter table name:"
+  read table_name
+  table_file="$table_name"
+  schema_file=".${table_name}_schema"
+
+  # Check if the table file and schema file exist
+  if [ ! -f "$table_file" ]; then
+    echo "Table $table_name does not exist."
+    updateTable
+  fi
+
+  if [ ! -f "$schema_file" ]; then
+    echo "Schema file $schema_file does not exist."
+    updateTable
+  fi
+
+  # Extract the primary key column from metadata
+  pk_column=$(grep 'PK' "$schema_file" | cut -d':' -f1)
+  
+  if [ -z "$pk_column" ]; then
+    echo "No primary key defined in the schema."
+    updateTable
+  fi
+
+  # Display current data for reference
+  echo "Current data in the table:"
+  cat "$table_file"
+  
+  # Get the primary key value to identify the record
+  echo "Enter the $pk_column value of the record to update:"
+  read pk_value
+
+  # Validate if the primary key value exists in the table
+  if ! awk -v pk="$pk_value" -v FS='[ ,]+' '$1==pk {found=1} END{if(!found) exit 1}' "$table_file"; then
+    echo "Primary key value $pk_value does not exist in the table."
+    updateTable
+  fi
+
+  # Prompt for columns to update and their new values
+  echo "Enter column names and their new values in the format 'column=value' (comma-separated):"
+  read updates
+  IFS=',' read -r -a updates_array <<< "$updates"
+
+  # Check if there are updates to apply
+  if [ -z "$updates" ]; then
+    echo "No updates specified."
+    updateTable
+  fi
+
+  # Validate updates format and columns
+  declare -A schema_map
+  index=1
+  while IFS=':' read -r column data_type constraint; do
+    schema_map["$column"]=$index
+    ((index++))
+  done < "$schema_file"
+
+  for update in "${updates_array[@]}"; do
+    if ! [[ "$update" =~ ^[a-zA-Z_]+=[^,]+$ ]]; then
+      echo "Invalid format: $update. Expected format 'column=value'."
+      updateTable
+    fi
+
+    column=$(echo "$update" | cut -d'=' -f1)
+    if [ -z "${schema_map[$column]}" ]; then
+      echo "Column $column does not exist."
+      updateTable
+    fi
+  done
+
+  # Create a temporary file to store updated data
+  temp_file=$(mktemp)
+  
+  # Write the header to the temporary file
+  head -n 1 "$table_file" > "$temp_file"
+
+  # Iterate over each line in the table and apply updates
+  {
+    head -n 1 "$table_file"  # Header
+    tail -n +2 "$table_file" | while IFS=' ' read -r -a row_array; do
+      if [ "${row_array[${schema_map[$pk_column]}-1]}" == "$pk_value" ]; then
+        # Update the row
+        for update in "${updates_array[@]}"; do
+          column=$(echo "$update" | cut -d'=' -f1)
+          new_value=$(echo "$update" | cut -d'=' -f2)
+          column_index=${schema_map[$column]}
+          row_array[$((column_index - 1))]="$new_value"
+        done
+        # Write the updated row to the temp file
+        IFS=' ' echo "${row_array[*]}" >> "$temp_file"
+      else
+        # Write the unchanged row to the temp file
+        IFS=' ' echo "${row_array[*]}" >> "$temp_file"
+      fi
+    done
+  } > "$temp_file"
+
+  # Replace the original table file with the updated file
+  mv "$temp_file" "$table_file"
+
+  echo "Record updated successfully."
+  tablesMenu
+}
+
+
+
+
+
+
+
 validate_columns_format() {
   local input="$1"
   if [[ "$input" =~ ^([a-zA-Z]+,)+ || "$input" =~ ^[a-zA-Z0-9_]+$ ]]; then
