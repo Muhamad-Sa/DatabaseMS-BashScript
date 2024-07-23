@@ -116,4 +116,78 @@ function tablesMenu {
   esac
 }
 
+
+
+selectFromTable() {
+  echo "Enter table name:"
+  read table_name
+  table_file="$table_name"
+
+  if [ ! -f "$table_file" ]; then
+    echo "Table $table_name does not exist."
+    selectFromTable
+  fi
+
+  echo "Enter column names to display (comma-separated, or * for all columns):"
+  read columns
+  echo -e "\n+-----------------------------------------+"
+  if [ "$columns" == "*" ]; then
+    cat "$table_file"
+  
+  else
+  
+      if ! validate_columns_format "$columns"; then
+      echo "Invalid column format. Please use comma-separated values with optional trailing comma (e.g., value1,value2,)."
+      selectFromTable
+    fi
+
+    header=$(sed -n '1p' "$table_file" | tr ',' '|')
+    column_indices=$(echo "$columns" | tr ',' '\n' | while read col; do
+      echo "$header" | tr '|' '\n' | grep -n "^$col$" | cut -d: -f1
+    done | tr '\n' ',' | sed 's/,$//' 2>> ../errorsFile )
+
+    if [ -z "$column_indices" ]; then
+      echo "Please enter valid column names."
+      selectFromTable
+    fi
+
+    {
+      echo "$header" | tr '|' ',' | cut -d',' -f $column_indices
+      tail -n +2 "$table_file" | cut -d',' -f $column_indices
+    } | column -t -s, 
+  fi
+
+  selectFunMenu
+
+}
+
+validate_columns_format() {
+  local input="$1"
+  if [[ "$input" =~ ^([a-zA-Z]+,)+ || "$input" =~ ^[a-zA-Z0-9_]+$ ]]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+  function selectFunMenu {
+  echo -e "+-----------------------------------------+"
+  echo "Press (1) to Make Another Operation        -->"
+  echo "Press (2) to Go To Table Menu              -->"
+  echo "Press (3) to Go To Main Menu               -->"
+  echo "Press (4) to Exit                          -->"
+  echo "+-----------------------------------------+"
+  echo -e "Enter Choice: \c"
+  read choice
+
+  case $choice in
+    1)  selectFromTable ;;
+    2)  tablesMenu ;;
+    3)  mainMenu ;;
+    4)  exit ;;
+    *)  echo "Wrong Choice, Please enter a valid number" ; selectFunMenu;
+  esac
+
+  }
+
 mainMenu
