@@ -224,8 +224,15 @@ function createColumns {
                 #end of inputs
                 echo $line >> $schemaFile 2>> ../errorsFile 
             done
+
+            # Remove any (PK) from header
+            header=$(echo $header | sed 's/(PK)//g')
+            
             #end of for-loop / make header for file..
-            echo $header >> $tbname 2>> ../errorsFile
+            header=${header%,}
+
+            # Create the data file and add the header
+            echo $header > $tbname 2>> ../errorsFile
         
             echo +-----------------------------------+
             echo +--$1 Schema Created Successfully!--+

@@ -1,4 +1,0 @@
-id:INT:PK
-name:VARCHAR
-age:INT
-city:VARCHAR
